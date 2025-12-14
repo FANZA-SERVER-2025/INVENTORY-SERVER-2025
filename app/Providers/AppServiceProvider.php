@@ -21,16 +21,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS scheme for all URLs
+        // Force HTTPS for URLs
+        $url = config('app.url');
+        if (str_starts_with($url, 'http://')) {
+            config(['app.url' => str_replace('http://', 'https://', $url)]);
+        }
         URL::forceScheme('https');
         
         // Force root URL to use https
         if (str_starts_with(config('app.url'), 'https://')) {
             $this->app['url']->forceRootUrl(config('app.url'));
         }
-        
-        // Force asset URLs to use HTTPS
-        URL::forceRootUrl(config('app.url'));
         
         // Implicitly grant "Super Admin" role all permissions
         // This works in the app by using gate-related functions like auth()->user->can() and @can()
