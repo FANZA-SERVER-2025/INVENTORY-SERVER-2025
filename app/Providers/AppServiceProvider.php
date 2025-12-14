@@ -21,9 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS for all URLs when APP_URL uses https
+        // Force HTTPS scheme for all URLs
+        URL::forceScheme('https');
+        
+        // Force root URL to use https
         if (str_starts_with(config('app.url'), 'https://')) {
-            URL::forceScheme('https');
+            $this->app['url']->forceRootUrl(config('app.url'));
         }
         
         // Implicitly grant "Super Admin" role all permissions
