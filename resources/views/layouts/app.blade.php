@@ -215,9 +215,9 @@
             
             @can('view-reports')
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
-                    <i class="fas fa-chart-line"></i> Reports
-                </a>
+                <button class="nav-link btn btn-link text-muted" disabled style="cursor: not-allowed; text-decoration: none;">
+                    <i class="fas fa-chart-line"></i> Reports - Sedang Dikembangkan
+                </button>
             </li>
             @endcan
             
