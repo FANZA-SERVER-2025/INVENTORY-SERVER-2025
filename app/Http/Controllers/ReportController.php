@@ -6,6 +6,9 @@ use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Exports\ReportsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class ReportController extends Controller
 {
@@ -96,3 +99,4 @@ class ReportController extends Controller
 
         return Excel::download(new ReportsExport($from->toDateString(), $to->toDateString()), 'reports_' . $from->format('Y-m-d') . '_to_' . $to->format('Y-m-d') . '.xlsx');
     }
+}
