@@ -67,6 +67,9 @@ class RolePermissionSeeder extends Seeder
             'edit-transactions',
             'delete-transactions',
             'export-transactions',
+
+            // Reports
+            'view-reports',
             
             // Profile
             'edit-profile',
