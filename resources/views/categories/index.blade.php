@@ -8,11 +8,11 @@
         <i class="fas fa-tags me-2"></i>Categories
     </h1>
     <div>
-        @can('export-categories')
+        {{-- @can('export-categories')
             <a href="{{ route('categories.export') }}" class="btn btn-success">
                 <i class="fas fa-file-excel me-2"></i>Export Excel
             </a>
-        @endcan
+        @endcan --}}
         @can('create-categories')
             <a href="{{ route('categories.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Add Category

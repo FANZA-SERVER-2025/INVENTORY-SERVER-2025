@@ -44,7 +44,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        {{-- <div class="mb-3">
                             <label for="vehicle_id" class="form-label">Kendaraan</label>
                             <select class="form-select select2 @error('vehicle_id') is-invalid @enderror" id="vehicle_id" name="vehicle_id">
                                 <option value="">Pilih Kendaraan (Opsional)</option>
@@ -57,12 +57,12 @@
                             @error('vehicle_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <div id="customer-fields" style="display: none;">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="customer_name" class="form-label">Nama Pelanggan</label>
+                                    <label for="customer_name" class="form-label">Nama Pelanggan <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('customer_name') is-invalid @enderror" 
                                            id="customer_name" name="customer_name" value="{{ old('customer_name') }}" placeholder="Masukkan nama pelanggan">
                                     @error('customer_name')
@@ -70,7 +70,7 @@
                                     @enderror
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="store_name" class="form-label">Nama Toko</label>
+                                    <label for="store_name" class="form-label">Nama Toko <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('store_name') is-invalid @enderror" 
                                            id="store_name" name="store_name" value="{{ old('store_name') }}" placeholder="Masukkan nama toko">
                                     @error('store_name')
@@ -147,6 +147,7 @@
             </div>
 
             <div class="col-md-4">
+                <div class="sticky-top" style="top: 20px;">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Ringkasan</h5>
@@ -171,13 +172,13 @@
                             <hr class="my-2">
                             <div class="mb-3">
                                 <label for="discount" class="form-label">Diskon (Rp)</label>
-                                <input type="number" class="form-control" id="discount" name="discount" 
-                                       value="0" min="0" step="1000">
+                                <input type="text" class="form-control" id="discount_display" value="0">
+                                <input type="hidden" id="discount" name="discount" value="0">
                             </div>
                             <div class="mb-3">
                                 <label for="bonus" class="form-label">Bonus (Rp)</label>
-                                <input type="number" class="form-control" id="bonus" name="bonus" 
-                                       value="0" min="0" step="1000">
+                                <input type="text" class="form-control" id="bonus_display" value="0">
+                                <input type="hidden" id="bonus" name="bonus" value="0">
                             </div>
                         </div>
 
@@ -217,6 +218,7 @@
                         </ul>
                     </div>
                 </div>
+                </div>
             </div>
         </div>
     </form>
@@ -228,7 +230,37 @@ let itemIndex = 0;
 const items = @json($items);
 const transactionType = $('#type');
 
+// Currency formatter
+function formatCurrency(value) {
+    return new Intl.NumberFormat('id-ID').format(value);
+}
+
+function parseCurrency(value) {
+    return parseInt(value.toString().replace(/\./g, '')) || 0;
+}
+
 $(document).ready(function() {
+    // Form validation before submit
+    $('#transactionForm').on('submit', function(e) {
+        const type = $('#type').val();
+        
+        if (type === 'out') {
+            const customerName = $('#customer_name').val().trim();
+            const storeName = $('#store_name').val().trim();
+            
+            if (!customerName || !storeName) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Belum Lengkap',
+                    text: 'Untuk transaksi Barang Keluar, harap isi Nama Pelanggan dan Nama Toko terlebih dahulu.',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+        }
+    });
+
     // Show/hide customer fields and payment status based on transaction type
     $('#type').on('change', function() {
         const type = $(this).val();
@@ -249,6 +281,7 @@ $(document).ready(function() {
             const row = $(this);
             const itemSelect = row.find('.item-select');
             const itemId = itemSelect.val();
+            const unitSelect = row.find('.unit-type-select');
             
             if (itemId) {
                 const item = items.find(i => i.id == itemId);
@@ -258,6 +291,15 @@ $(document).ready(function() {
                     } else {
                         row.find('.item-price').val(item.selling_price);
                     }
+                    
+                    // Enable/disable unit select based on box settings and transaction type
+                    if (item.box_type && item.box_quantity) {
+                        unitSelect.val('box').trigger('change');
+                        unitSelect.prop('disabled', true);
+                    } else {
+                        unitSelect.prop('disabled', false);
+                    }
+                    
                     updateSummary();
                 }
             }
@@ -269,9 +311,33 @@ $(document).ready(function() {
         $('#customer-fields').show();
         $('#payment-status-field').show();
         $('#discount-bonus-section').show();
+        
+        // Disable unit selects for items with box settings
+        $('#itemsTableBody tr').each(function() {
+            const row = $(this);
+            const item = row.data('item');
+            if (item && item.box_type && item.box_quantity) {
+                const unitSelect = row.find('.unit-type-select');
+                unitSelect.prop('disabled', true);
+                // Add hidden input to ensure value is submitted
+                if (!row.find('input[name="' + unitSelect.attr('name') + '"]').length) {
+                    row.find('td').eq(2).append('<input type="hidden" name="' + unitSelect.attr('name') + '" value="' + unitSelect.val() + '">');
+                }
+            }
+        });
     }
 
     $('#addItemBtn').on('click', function() {
+        const transactionType = $('#type').val();
+        if (!transactionType) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pilih Tipe Transaksi',
+                text: 'Silakan pilih Barang Masuk atau Barang Keluar terlebih dahulu sebelum menambah item.',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
         addItemRow();
     });
 
@@ -291,14 +357,23 @@ $(document).ready(function() {
         if (itemId) {
             const item = items.find(i => i.id == itemId);
             if (item) {
-                row.find('.item-stock').html(item.stock + ' ' + item.unit);
+                // Display stock based on item type
+                let stockDisplay = item.stock + ' ' + item.unit;
+                if (item.box_type && item.box_quantity && item.box_quantity > 0) {
+                    const pcsPerBox = (item.box_type === 'dozen') ? item.box_quantity * 12 : item.box_quantity;
+                    const boxCount = Math.floor(item.stock / pcsPerBox);
+                    stockDisplay = boxCount + ' box';
+                }
+                row.find('.item-stock').html(stockDisplay);
                 
                 // Set price based on transaction type
                 const transactionType = $('#type').val();
                 if (transactionType === 'in') {
                     row.find('.item-price').val(item.purchase_price);
+                    row.find('.item-price-display').val(formatCurrency(item.purchase_price));
                 } else {
                     row.find('.item-price').val(item.selling_price);
+                    row.find('.item-price-display').val(formatCurrency(item.selling_price));
                 }
                 
                 row.data('item', item);
@@ -312,8 +387,19 @@ $(document).ready(function() {
                     row.data('has-box-settings', true);
                     row.data('box-type', item.box_type);
                     row.data('box-quantity', item.box_quantity);
+                    
+                    // Automatically select 'box' if item has box settings
+                    unitSelect.val('box').trigger('change');
+                    unitSelect.prop('disabled', true);
+                    // Add hidden input to ensure value is submitted
+                    if (!row.find('input[name="' + unitSelect.attr('name') + '"]').length) {
+                        row.find('td').eq(2).append('<input type="hidden" name="' + unitSelect.attr('name') + '" value="' + unitSelect.val() + '">');
+                    }
                 } else {
                     row.data('has-box-settings', false);
+                    unitSelect.prop('disabled', false);
+                    // Remove hidden input if exists
+                    row.find('input[name="' + unitSelect.attr('name') + '"]').remove();
                 }
             }
         } else {
@@ -344,16 +430,16 @@ $(document).ready(function() {
                 row.find('.sub-unit-select').val(boxType).prop('disabled', true);
                 
                 if (boxType === 'dozen') {
-                    row.find('.dozen-per-box').val(boxQuantity).prop('readonly', true);
-                    row.find('.pcs-per-dozen').val(12).prop('readonly', true);
+                    row.find('.dozen-per-box').val(boxQuantity).prop('readonly', true).css('background-color', '#f8f9fa');
+                    row.find('.pcs-per-dozen').val(12).prop('readonly', true).css('background-color', '#f8f9fa');
                 } else if (boxType === 'pcs') {
-                    row.find('.pcs-per-box').val(boxQuantity).prop('readonly', true);
+                    row.find('.pcs-per-box').val(boxQuantity).prop('readonly', true).css('background-color', '#f8f9fa');
                 }
             } else {
                 // Manual input for box settings - hide badge
                 row.find('.box-settings-badge').hide();
                 row.find('.sub-unit-select').prop('disabled', false);
-                row.find('.dozen-per-box, .pcs-per-dozen, .pcs-per-box').prop('readonly', false);
+                row.find('.dozen-per-box, .pcs-per-dozen, .pcs-per-box').prop('readonly', false).css('background-color', '');
             }
             
             // Trigger sub-unit change to show proper conversion fields
@@ -369,7 +455,7 @@ $(document).ready(function() {
         updateRowQuantity(row);
     });
 
-    $(document).on('input', '.item-quantity, .box-qty, .sub-unit-qty, .sub-unit-qty-pcs, .item-price, .dozen-per-box, .pcs-per-dozen, .pcs-per-box', function() {
+    $(document).on('input', '.item-quantity, .box-qty, .item-price, .dozen-per-box, .pcs-per-dozen, .pcs-per-box', function() {
         const row = $(this).closest('tr');
         updateConversionInfo(row);
         updateRowQuantity(row);
@@ -414,7 +500,7 @@ function addItemRow() {
             <td class="item-stock text-center">-</td>
             <td>
                 <select class="form-select form-select-sm unit-type-select" name="items[${itemIndex}][unit_type]" required>
-                    <option value="pcs">Pcs</option>
+                    <option value="pcs" selected>Pcs</option>
                     <option value="dozen">Lusin</option>
                     <option value="box">Box</option>
                 </select>
@@ -459,11 +545,6 @@ function addItemRow() {
                                        name="items[${itemIndex}][pcs_per_dozen]" min="1" value="12">
                             </div>
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label form-label-sm mb-1">Qty Lusin (tambahan)</label>
-                            <input type="number" class="form-control form-control-sm sub-unit-qty" 
-                                   name="items[${itemIndex}][sub_unit_quantity]" min="0" value="0">
-                        </div>
                     </div>
                     
                     <!-- If sub unit is Pcs -->
@@ -475,20 +556,15 @@ function addItemRow() {
                                        name="items[${itemIndex}][pcs_per_box]" min="1" value="1">
                             </div>
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label form-label-sm mb-1">Qty Pcs (tambahan)</label>
-                            <input type="number" class="form-control form-control-sm sub-unit-qty-pcs" 
-                                   name="items[${itemIndex}][sub_unit_quantity]" min="0" value="0">
-                        </div>
                     </div>
                     
                     <div class="conversion-info mb-2 alert alert-info py-1 px-2" style="display:none;"></div>
-                    <input type="hidden" class="calculated-qty" name="items[${itemIndex}][calculated_quantity]" value="0">
+                    <input type="hidden" class="calculated-qty" name="items[${itemIndex}][quantity]" value="0">
                 </div>
             </td>
             <td>
-                <input type="number" class="form-control form-control-sm item-price" 
-                       name="items[${itemIndex}][price]" min="0" value="0" required readonly>
+                <input type="text" class="form-control form-control-sm item-price-display" value="0" readonly>
+                <input type="hidden" class="item-price" name="items[${itemIndex}][price]" value="0">
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-danger remove-item-btn">
@@ -517,30 +593,20 @@ function updateConversionInfo(row) {
         if (subUnitType === 'dozen') {
             const dozenPerBox = parseInt(row.find('.dozen-per-box').val()) || 1;
             const pcsPerDozen = parseInt(row.find('.pcs-per-dozen').val()) || 12;
-            const subUnitQty = parseInt(row.find('.sub-unit-qty').val()) || 0;
             
             const totalDozenInBoxes = boxQty * dozenPerBox;
             totalPcsInBoxes = totalDozenInBoxes * pcsPerDozen;
-            subUnitInPcs = subUnitQty * pcsPerDozen;
             
             infoText += `${boxQty} box × ${dozenPerBox} lusin × ${pcsPerDozen} pcs = ${totalPcsInBoxes} pcs`;
-            if (subUnitQty > 0) {
-                infoText += `<br>+ ${subUnitQty} lusin × ${pcsPerDozen} pcs = ${subUnitInPcs} pcs`;
-            }
         } else {
             const pcsPerBox = parseInt(row.find('.pcs-per-box').val()) || 1;
-            const subUnitQtyPcs = parseInt(row.find('.sub-unit-qty-pcs').val()) || 0;
             
             totalPcsInBoxes = boxQty * pcsPerBox;
-            subUnitInPcs = subUnitQtyPcs;
             
             infoText += `${boxQty} box × ${pcsPerBox} pcs = ${totalPcsInBoxes} pcs`;
-            if (subUnitQtyPcs > 0) {
-                infoText += `<br>+ ${subUnitQtyPcs} pcs`;
-            }
         }
         
-        const totalPcs = totalPcsInBoxes + subUnitInPcs;
+        const totalPcs = totalPcsInBoxes;
         infoText += `<br><strong>Total: ${totalPcs} pcs</strong>`;
         
         row.find('.conversion-info').html(infoText).show();
@@ -593,6 +659,8 @@ function updateSummary() {
     let totalItems = 0;
     let totalQuantity = 0;
     let totalAmount = 0;
+    let allBox = true;
+    let totalBoxes = 0;
 
     $('#itemsTableBody tr').each(function() {
         const row = $(this);
@@ -602,14 +670,20 @@ function updateSummary() {
         
         const unitType = row.find('.unit-type-select').val();
         let qty = 0;
+        let boxQty = 0;
         
         if (unitType === 'box') {
             qty = parseInt(row.find('.calculated-qty').val()) || 0;
-        } else if (unitType === 'dozen') {
-            const dozenQty = parseInt(row.find('.item-quantity').val()) || 0;
-            qty = dozenQty * 12; // default 12 pcs per dozen
+            boxQty = parseInt(row.find('.box-qty').val()) || 0;
+            totalBoxes += boxQty;
         } else {
-            qty = parseInt(row.find('.item-quantity').val()) || 0;
+            allBox = false;
+            if (unitType === 'dozen') {
+                const dozenQty = parseInt(row.find('.item-quantity').val()) || 0;
+                qty = dozenQty * 12; // default 12 pcs per dozen
+            } else {
+                qty = parseInt(row.find('.item-quantity').val()) || 0;
+            }
         }
         
         const price = parseFloat(row.find('.item-price').val()) || 0;
@@ -622,7 +696,11 @@ function updateSummary() {
     });
 
     $('#totalItems').text(totalItems);
-    $('#totalQuantity').text(totalQuantity + ' pcs');
+    if (allBox && totalBoxes > 0) {
+        $('#totalQuantity').text(totalBoxes + ' box');
+    } else {
+        $('#totalQuantity').text(totalQuantity + ' pcs');
+    }
     $('#subtotalAmount').text('Rp ' + new Intl.NumberFormat('id-ID').format(totalAmount));
     
     // Calculate final total with discount and bonus
@@ -634,7 +712,23 @@ function updateSummary() {
 }
 
 // Update summary when discount or bonus changes
-$(document).on('input', '#discount, #bonus', function() {
+$(document).on('input', '#discount_display, #bonus_display', function() {
+    updateSummary();
+});
+
+// Format discount input
+$('#discount_display').on('input', function() {
+    let value = parseCurrency($(this).val());
+    $(this).val(formatCurrency(value));
+    $('#discount').val(value);
+    updateSummary();
+});
+
+// Format bonus input
+$('#bonus_display').on('input', function() {
+    let value = parseCurrency($(this).val());
+    $(this).val(formatCurrency(value));
+    $('#bonus').val(value);
     updateSummary();
 });
 </script>

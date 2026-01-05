@@ -33,7 +33,18 @@
             <div class="card-body">
                 <div class="text-xs text-uppercase text-muted mb-1">Transaksi Masuk</div>
                 <div class="h5 mb-0 fw-bold">{{ number_format($totals['in_transactions']) }}</div>
-                <div class="small text-muted mt-1">Qty: {{ number_format($totals['in_qty']) }}</div>
+                <div class="small mt-2">
+                    @if($totals['in_box'] > 0)
+                        <span class="badge bg-primary">{{ number_format($totals['in_box']) }} Box</span>
+                    @endif
+                    @if($totals['in_dozen'] > 0)
+                        <span class="badge bg-info">{{ number_format($totals['in_dozen']) }} Lusin</span>
+                    @endif
+                    @if($totals['in_pcs'] > 0)
+                        <span class="badge bg-secondary">{{ number_format($totals['in_pcs']) }} Pcs</span>
+                    @endif
+                </div>
+                <div class="small text-muted mt-1">Total: {{ number_format($totals['in_qty']) }} pcs</div>
                 <div class="small text-muted">Amount: Rp {{ number_format($totals['in_amount'], 0, ',', '.') }}</div>
             </div>
         </div>
@@ -43,7 +54,18 @@
             <div class="card-body">
                 <div class="text-xs text-uppercase text-muted mb-1">Transaksi Keluar</div>
                 <div class="h5 mb-0 fw-bold">{{ number_format($totals['out_transactions']) }}</div>
-                <div class="small text-muted mt-1">Qty: {{ number_format($totals['out_qty']) }}</div>
+                <div class="small mt-2">
+                    @if($totals['out_box'] > 0)
+                        <span class="badge bg-primary">{{ number_format($totals['out_box']) }} Box</span>
+                    @endif
+                    @if($totals['out_dozen'] > 0)
+                        <span class="badge bg-info">{{ number_format($totals['out_dozen']) }} Lusin</span>
+                    @endif
+                    @if($totals['out_pcs'] > 0)
+                        <span class="badge bg-secondary">{{ number_format($totals['out_pcs']) }} Pcs</span>
+                    @endif
+                </div>
+                <div class="small text-muted mt-1">Total: {{ number_format($totals['out_qty']) }} pcs</div>
                 <div class="small text-muted">Amount: Rp {{ number_format($totals['out_amount'], 0, ',', '.') }}</div>
             </div>
         </div>
@@ -87,7 +109,7 @@
                             <th>#</th>
                             <th>Item</th>
                             <th>Category</th>
-                            <th class="text-end">Total Qty</th>
+                            <th class="text-end">Qty</th>
                             <th class="text-end">Total Value</th>
                         </tr>
                     </thead>
@@ -97,7 +119,18 @@
                             <td>{{ $idx+1 }}</td>
                             <td>{{ $row->item?->name ?? '-' }}</td>
                             <td>{{ $row->item?->category?->name ?? '-' }}</td>
-                            <td class="text-end">{{ number_format($row->total_qty) }}</td>
+                            <td class="text-end">
+                                @if($row->total_box > 0)
+                                    <span class="badge bg-primary">{{ number_format($row->total_box) }} Box</span>
+                                @endif
+                                @if($row->total_dozen > 0)
+                                    <span class="badge bg-info">{{ number_format($row->total_dozen) }} Lusin</span>
+                                @endif
+                                @if($row->total_pcs > 0)
+                                    <span class="badge bg-secondary">{{ number_format($row->total_pcs) }} Pcs</span>
+                                @endif
+                                <br><small class="text-muted">({{ number_format($row->total_qty) }} pcs total)</small>
+                            </td>
                             <td class="text-end">Rp {{ number_format($row->total_value, 0, ',', '.') }}</td>
                         </tr>
                         @empty
@@ -122,7 +155,7 @@
                             <th>#</th>
                             <th>Item</th>
                             <th>Category</th>
-                            <th class="text-end">Total Qty</th>
+                            <th class="text-end">Qty</th>
                             <th class="text-end">Total Value</th>
                         </tr>
                     </thead>
@@ -132,7 +165,18 @@
                             <td>{{ $idx+1 }}</td>
                             <td>{{ $row->item?->name ?? '-' }}</td>
                             <td>{{ $row->item?->category?->name ?? '-' }}</td>
-                            <td class="text-end">{{ number_format($row->total_qty) }}</td>
+                            <td class="text-end">
+                                @if($row->total_box > 0)
+                                    <span class="badge bg-primary">{{ number_format($row->total_box) }} Box</span>
+                                @endif
+                                @if($row->total_dozen > 0)
+                                    <span class="badge bg-info">{{ number_format($row->total_dozen) }} Lusin</span>
+                                @endif
+                                @if($row->total_pcs > 0)
+                                    <span class="badge bg-secondary">{{ number_format($row->total_pcs) }} Pcs</span>
+                                @endif
+                                <br><small class="text-muted">({{ number_format($row->total_qty) }} pcs total)</small>
+                            </td>
                             <td class="text-end">Rp {{ number_format($row->total_value, 0, ',', '.') }}</td>
                         </tr>
                         @empty

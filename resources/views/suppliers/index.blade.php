@@ -7,11 +7,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Data Supplier</h1>
         <div>
-            @can('export-suppliers')
+            {{-- @can('export-suppliers')
             <a href="{{ route('suppliers.export') }}" class="btn btn-success">
                 <i class="fas fa-file-excel"></i> Export Excel
             </a>
-            @endcan
+            @endcan --}}
             @can('create-suppliers')
             <a href="{{ route('suppliers.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Tambah Supplier

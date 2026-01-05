@@ -74,20 +74,10 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="stock" class="form-label">Stok Saat Ini</label>
                                 <input type="text" class="form-control" value="{{ $item->stock }} pcs" readonly disabled>
                                 <small class="text-muted">Stok tidak bisa diubah manual. Gunakan transaksi untuk mengubah stok.</small>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="minimum_stock" class="form-label">Stok Minimum <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control @error('minimum_stock') is-invalid @enderror" 
-                                       id="minimum_stock" name="minimum_stock" value="{{ old('minimum_stock', $item->minimum_stock) }}" min="0" required>
-                                @error('minimum_stock')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Stok untuk alert low stock</small>
                             </div>
                         </div>
 
@@ -96,9 +86,12 @@
 
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label class="form-label">Pengaturan Box (Opsional)</label>
+                                <label class="form-label">Pengaturan Box</label>
                                 <div class="card border">
                                     <div class="card-body">
+                                        <p class="small text-info mb-3">
+                                            <i class="fas fa-info-circle"></i> <strong>Gunakan fitur ini apabila item dibeli dan dijual per box.</strong> Jika item dijual satuan (pcs/lusin), kosongkan saja.
+                                        </p>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="box_type" class="form-label">Tipe Isi Box</label>
@@ -130,12 +123,29 @@
                         </div>
 
                         <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="minimum_stock" class="form-label">Stok Minimum <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control @error('minimum_stock') is-invalid @enderror" 
+                                           id="minimum_stock_display" value="{{ old('minimum_stock', $item->minimum_stock) }}" min="0" required>
+                                    <span class="input-group-text" id="stock_unit_label">pcs</span>
+                                </div>
+                                <input type="hidden" id="minimum_stock" name="minimum_stock" value="{{ old('minimum_stock', $item->minimum_stock) }}">
+                                @error('minimum_stock')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted" id="minimum_stock_help">Stok untuk alert low stock</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="purchase_price" class="form-label">Harga Beli <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="number" class="form-control @error('purchase_price') is-invalid @enderror" 
-                                           id="purchase_price" name="purchase_price" value="{{ old('purchase_price', $item->purchase_price) }}" min="0" required>
+                                    <input type="text" class="form-control currency-input @error('purchase_price') is-invalid @enderror" 
+                                           id="purchase_price_display" value="{{ old('purchase_price', $item->purchase_price) }}" required>
+                                    <input type="hidden" id="purchase_price" name="purchase_price" value="{{ old('purchase_price', $item->purchase_price) }}">
                                 </div>
                                 @error('purchase_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -146,8 +156,9 @@
                                 <label for="selling_price" class="form-label">Harga Jual <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="number" class="form-control @error('selling_price') is-invalid @enderror" 
-                                           id="selling_price" name="selling_price" value="{{ old('selling_price', $item->selling_price) }}" min="0" required>
+                                    <input type="text" class="form-control currency-input @error('selling_price') is-invalid @enderror" 
+                                           id="selling_price_display" value="{{ old('selling_price', $item->selling_price) }}" required>
+                                    <input type="hidden" id="selling_price" name="selling_price" value="{{ old('selling_price', $item->selling_price) }}">
                                 </div>
                                 @error('selling_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -256,6 +267,78 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    // Currency formatter
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('id-ID').format(value);
+    }
+    
+    function parseCurrency(value) {
+        return parseInt(value.toString().replace(/\./g, '')) || 0;
+    }
+    
+    // Format purchase price
+    $('#purchase_price_display').on('input', function() {
+        let value = parseCurrency($(this).val());
+        $(this).val(formatCurrency(value));
+        $('#purchase_price').val(value);
+    }).val(formatCurrency($('#purchase_price').val()));
+    
+    // Format selling price
+    $('#selling_price_display').on('input', function() {
+        let value = parseCurrency($(this).val());
+        $(this).val(formatCurrency(value));
+        $('#selling_price').val(value);
+    }).val(formatCurrency($('#selling_price').val()));
+
+    // Handle box type changes for minimum stock
+    function updateMinimumStockField() {
+        const boxType = $('#box_type').val();
+        const boxQuantity = parseInt($('#box_quantity').val()) || 0;
+        const currentMinStock = parseInt($('#minimum_stock').val()) || 0;
+        
+        if (boxType && boxQuantity > 0) {
+            // Show box as unit
+            $('#stock_unit_label').text('box');
+            const pcsPerBox = boxType === 'dozen' ? boxQuantity * 12 : boxQuantity;
+            const boxTypeText = boxType === 'dozen' ? boxQuantity + ' lusin' : boxQuantity + ' pcs';
+            
+            // Convert current minimum stock from pcs to box for display
+            const minStockInBox = Math.ceil(currentMinStock / pcsPerBox);
+            $('#minimum_stock_display').val(minStockInBox);
+            
+            $('#minimum_stock_help').html(
+                '<strong class="text-info">📦 1 box = ' + boxTypeText + ' (' + pcsPerBox + ' pcs)</strong><br>' +
+                'Masukkan jumlah box untuk stok minimum. <strong>Contoh:</strong> jika isi 1 box, saat box tersisa <strong>1 box</strong>, sistem akan memberikan alert low stock.'
+            );
+        } else {
+            // Show pcs as unit
+            $('#stock_unit_label').text('pcs');
+            $('#minimum_stock_display').val(currentMinStock);
+            $('#minimum_stock_help').text('Stok untuk alert low stock');
+        }
+    }
+    
+    $('#box_type, #box_quantity').on('change input', function() {
+        updateMinimumStockField();
+    });
+    
+    // Convert minimum stock from box to pcs when form is submitted
+    $('form').on('submit', function(e) {
+        const boxType = $('#box_type').val();
+        const boxQuantity = parseInt($('#box_quantity').val()) || 0;
+        const minStockDisplay = parseInt($('#minimum_stock_display').val()) || 0;
+        
+        if (boxType && boxQuantity > 0) {
+            const pcsPerBox = boxType === 'dozen' ? boxQuantity * 12 : boxQuantity;
+            const minStockInPcs = minStockDisplay * pcsPerBox;
+            $('#minimum_stock').val(minStockInPcs);
+        } else {
+            $('#minimum_stock').val(minStockDisplay);
+        }
+    });
+    
+    updateMinimumStockField();
+
     // Image preview
     $('#image').on('change', function() {
         const file = this.files[0];

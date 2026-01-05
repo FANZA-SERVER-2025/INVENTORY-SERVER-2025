@@ -74,11 +74,17 @@ $(document).ready(function() {
                 data: null,
                 name: 'stock',
                 render: function(data) {
+                    let stockDisplay = data.stock;
+                    if (data.box_type && data.box_quantity && data.box_quantity > 0) {
+                        const pcsPerBox = (data.box_type === 'dozen') ? data.box_quantity * 12 : data.box_quantity;
+                        const boxCount = Math.floor(data.stock / pcsPerBox);
+                        stockDisplay = boxCount + ' box';
+                    }
                     let badge = '';
                     if (data.stock < data.minimum_stock) {
                         badge = '<span class="badge bg-warning ms-1">Low</span>';
                     }
-                    return data.stock + badge;
+                    return stockDisplay + badge;
                 }
             },
             { data: 'unit', name: 'unit' },

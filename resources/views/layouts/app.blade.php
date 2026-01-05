@@ -197,13 +197,13 @@
             </li>
             @endcan
             
-            @can('view-vehicles')
+            {{-- @can('view-vehicles')
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('vehicles.*') ? 'active' : '' }}" href="{{ route('vehicles.index') }}">
                     <i class="fas fa-car"></i> Vehicles
                 </a>
             </li>
-            @endcan
+            @endcan --}}
             
             @can('view-transactions')
             <li class="nav-item">

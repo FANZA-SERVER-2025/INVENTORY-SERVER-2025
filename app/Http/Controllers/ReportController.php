@@ -24,6 +24,9 @@ class ReportController extends Controller
 
         // Recap Barang Masuk (IN)
         $inRecap = TransactionDetail::select('item_id',
+                DB::raw('SUM(COALESCE(box_quantity, 0)) as total_box'),
+                DB::raw('SUM(quantity) / 12 as total_dozen'),
+                DB::raw('SUM(CASE WHEN unit_type = "pcs" THEN quantity ELSE 0 END) as total_pcs'),
                 DB::raw('SUM(quantity) as total_qty'),
                 DB::raw('SUM(subtotal) as total_value')
             )
@@ -34,21 +37,47 @@ class ReportController extends Controller
             ->with(['item.category'])
             ->groupBy('item_id')
             ->orderByDesc('total_qty')
-            ->get();
+            ->get()
+            ->map(function($detail) {
+                return (object) [
+                    'item_id' => $detail->item_id,
+                    'item' => $detail->item,
+                    'total_box' => (int) $detail->total_box,
+                    'total_dozen' => round($detail->total_dozen, 2),
+                    'total_pcs' => (int) $detail->total_pcs,
+                    'total_qty' => (int) $detail->total_qty,
+                    'total_value' => (float) $detail->total_value,
+                ];
+            });
 
         // Recap Barang Keluar (OUT)
         $outRecap = TransactionDetail::select('item_id',
+                DB::raw('SUM(COALESCE(box_quantity, 0)) as total_box'),
+                DB::raw('SUM(quantity) / 12 as total_dozen'),
+                DB::raw('SUM(CASE WHEN unit_type = "pcs" THEN quantity ELSE 0 END) as total_pcs'),
                 DB::raw('SUM(quantity) as total_qty'),
                 DB::raw('SUM(subtotal) as total_value')
             )
             ->whereHas('transaction', function ($q) use ($from, $to) {
                 $q->where('type', 'out')
+                  ->where('payment_status', 'paid')
                   ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()]);
             })
             ->with(['item.category'])
             ->groupBy('item_id')
             ->orderByDesc('total_qty')
-            ->get();
+            ->get()
+            ->map(function($detail) {
+                return (object) [
+                    'item_id' => $detail->item_id,
+                    'item' => $detail->item,
+                    'total_box' => (int) $detail->total_box,
+                    'total_dozen' => round($detail->total_dozen, 2),
+                    'total_pcs' => (int) $detail->total_pcs,
+                    'total_qty' => (int) $detail->total_qty,
+                    'total_value' => (float) $detail->total_value,
+                ];
+            });
 
         // Totals & Counters
         $totals = [
@@ -56,14 +85,22 @@ class ReportController extends Controller
                 ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
                 ->count(),
             'out_transactions' => Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
                 ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
                 ->count(),
             'in_qty' => (int) $inRecap->sum('total_qty'),
+            'in_box' => (int) $inRecap->sum('total_box'),
+            'in_dozen' => (int) $inRecap->sum('total_dozen'),
+            'in_pcs' => (int) $inRecap->sum('total_pcs'),
             'out_qty' => (int) $outRecap->sum('total_qty'),
+            'out_box' => (int) $outRecap->sum('total_box'),
+            'out_dozen' => (int) $outRecap->sum('total_dozen'),
+            'out_pcs' => (int) $outRecap->sum('total_pcs'),
             'in_amount' => (float) Transaction::where('type', 'in')
                 ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
                 ->sum('total_amount'),
             'out_amount' => (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
                 ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
                 ->sum('total_amount'),
         ];
@@ -71,13 +108,16 @@ class ReportController extends Controller
         // Omset (Revenue from OUT transactions)
         $omset = [
             'weekly' => (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
                 ->whereBetween('transaction_date', [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()])
                 ->sum('total_amount'),
             'monthly' => (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
                 ->whereYear('transaction_date', now()->year)
                 ->whereMonth('transaction_date', now()->month)
                 ->sum('total_amount'),
             'yearly' => (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
                 ->whereYear('transaction_date', now()->year)
                 ->sum('total_amount'),
         ];

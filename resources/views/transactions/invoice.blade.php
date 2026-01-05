@@ -20,10 +20,9 @@
         /* ============ PAGE STYLES ============ */
         .page {
             width: 190mm;
-            min-height: auto;
-            height: auto;
+            max-height: 150mm;
             padding: 10mm;
-            margin: 0 auto 5mm auto;
+            margin: 0 auto 10mm auto;
             page-break-after: always;
             position: relative;
         }
@@ -177,10 +176,9 @@
         foreach($transaction->details as $detail) {
             $subtotal += $detail->subtotal;
         }
-        $ppn = $subtotal * 0.11;
         $discount = $transaction->discount ?? 0;
         $bonus = $transaction->bonus ?? 0;
-        $grandTotal = $subtotal + $ppn - $discount - $bonus;
+        $grandTotal = $subtotal - $discount - $bonus;
         
         $pages = [
             ['class' => 'page-white', 'name' => 'Putih'],
@@ -247,13 +245,11 @@
                     <td>{{ $detail->item->name }}</td>
                     <td style="font-size: 8px;">
                         @if($detail->unit_type === 'box')
-                            <strong>{{ $detail->box_quantity }} Box</strong>
-                            @if($detail->sub_unit_type === 'dozen')
-                                + {{ $detail->sub_unit_quantity ?? 0 }} Lsn<br>
+                            @if($detail->box_quantity > 0)
+                                <strong>{{ $detail->box_quantity }} Box</strong>
                             @else
-                                + {{ $detail->sub_unit_quantity ?? 0 }} Pcs<br>
+                                <strong>{{ number_format($detail->quantity, 0, ',', '.') }} pcs</strong>
                             @endif
-                            <em>= {{ number_format($detail->quantity, 0, ',', '.') }} pcs</em>
                         @elseif($detail->unit_type === 'dozen')
                             <strong>{{ number_format($detail->quantity / 12, 0, ',', '.') }} Lsn</strong><br>
                             <em>= {{ number_format($detail->quantity, 0, ',', '.') }} pcs</em>
@@ -290,10 +286,6 @@
                 <tr>
                     <td class="label-col">Sub Total:</td>
                     <td class="value-col">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
-                </tr>
-                <tr>
-                    <td class="label-col">PPN 11%:</td>
-                    <td class="value-col">Rp {{ number_format($ppn, 0, ',', '.') }}</td>
                 </tr>
                 @if($discount > 0)
                 <tr>

@@ -101,6 +101,7 @@ class TransactionController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.unit_type' => 'required|in:pcs,dozen,box',
+            'items.*.box_quantity' => 'nullable|integer|min:1',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0'
         ]);
@@ -162,7 +163,7 @@ class TransactionController extends Controller
                 ];
                 
                 // Add box-specific data if unit type is box
-                if ($unitType === 'box' && isset($itemData['box_quantity'])) {
+                if ($unitType === 'box' && isset($itemData['box_quantity']) && $itemData['box_quantity'] > 0) {
                     $detailData['box_quantity'] = $itemData['box_quantity'];
                     $detailData['sub_unit_type'] = $itemData['sub_unit_type'] ?? null;
                     $detailData['sub_unit_quantity'] = $itemData['sub_unit_quantity'] ?? 0;

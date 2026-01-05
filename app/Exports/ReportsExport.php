@@ -53,6 +53,9 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
     {
         // Get IN recap
         $inRecap = TransactionDetail::select('item_id',
+                DB::raw('SUM(COALESCE(box_quantity, 0)) as total_box'),
+                DB::raw('SUM(quantity) / 12 as total_dozen'),
+                DB::raw('SUM(CASE WHEN unit_type = "pcs" THEN quantity ELSE 0 END) as total_pcs'),
                 DB::raw('SUM(quantity) as total_qty'),
                 DB::raw('SUM(subtotal) as total_value'),
                 DB::raw("'IN' as type")
@@ -64,51 +67,83 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
             ->with(['item.category'])
             ->groupBy('item_id')
             ->orderByDesc('total_qty')
-            ->get();
+            ->get()
+            ->map(function($detail) {
+                return (object) [
+                    'item_id' => $detail->item_id,
+                    'item' => $detail->item,
+                    'total_box' => (int) $detail->total_box,
+                    'total_dozen' => round($detail->total_dozen, 2),
+                    'total_pcs' => (int) $detail->total_pcs,
+                    'total_qty' => (int) $detail->total_qty,
+                    'total_value' => (float) $detail->total_value,
+                    'type' => $detail->type,
+                ];
+            });
 
         // Get OUT recap
         $outRecap = TransactionDetail::select('item_id',
+                DB::raw('SUM(COALESCE(box_quantity, 0)) as total_box'),
+                DB::raw('SUM(quantity) / 12 as total_dozen'),
+                DB::raw('SUM(CASE WHEN unit_type = "pcs" THEN quantity ELSE 0 END) as total_pcs'),
                 DB::raw('SUM(quantity) as total_qty'),
                 DB::raw('SUM(subtotal) as total_value'),
                 DB::raw("'OUT' as type")
             )
             ->whereHas('transaction', function ($q) {
                 $q->where('type', 'out')
+                  ->where('payment_status', 'paid')
                   ->whereBetween('transaction_date', [$this->from, $this->to]);
             })
             ->with(['item.category'])
             ->groupBy('item_id')
             ->orderByDesc('total_qty')
-            ->get();
+            ->get()
+            ->map(function($detail) {
+                return (object) [
+                    'item_id' => $detail->item_id,
+                    'item' => $detail->item,
+                    'total_box' => (int) $detail->total_box,
+                    'total_dozen' => round($detail->total_dozen, 2),
+                    'total_pcs' => (int) $detail->total_pcs,
+                    'total_qty' => (int) $detail->total_qty,
+                    'total_value' => (float) $detail->total_value,
+                    'type' => $detail->type,
+                ];
+            });
 
         // Combine and format
         $data = collect();
 
         if ($inRecap->isNotEmpty()) {
-            $data->push(['REKAPAN BARANG MASUK', '', '', '', '']);
-            $data->push(['Item', 'Category', 'Total Qty', 'Total Value', 'Type']);
+            $data->push(['REKAPAN BARANG MASUK', '', '', '', '', '', '']);
+            $data->push(['Item', 'Category', 'Box', 'Lusin', 'Pcs', 'Total (Pcs)', 'Total Value']);
             foreach ($inRecap as $row) {
                 $data->push([
                     $row->item?->name ?? '-',
                     $row->item?->category?->name ?? '-',
-                    $row->total_qty,
-                    $row->total_value,
-                    $row->type
+                    $row->total_box > 0 ? number_format($row->total_box) : '-',
+                    $row->total_dozen > 0 ? number_format($row->total_dozen, 2) : '-',
+                    $row->total_pcs > 0 ? number_format($row->total_pcs) : '-',
+                    number_format($row->total_qty),
+                    'Rp ' . number_format($row->total_value, 0, ',', '.')
                 ]);
             }
-            $data->push(['', '', '', '', '']); // Empty row
+            $data->push(['', '', '', '', '', '', '']); // Empty row
         }
 
         if ($outRecap->isNotEmpty()) {
-            $data->push(['REKAPAN BARANG KELUAR', '', '', '', '']);
-            $data->push(['Item', 'Category', 'Total Qty', 'Total Value', 'Type']);
+            $data->push(['REKAPAN BARANG KELUAR', '', '', '', '', '', '']);
+            $data->push(['Item', 'Category', 'Box', 'Lusin', 'Pcs', 'Total (Pcs)', 'Total Value']);
             foreach ($outRecap as $row) {
                 $data->push([
                     $row->item?->name ?? '-',
                     $row->item?->category?->name ?? '-',
-                    $row->total_qty,
-                    $row->total_value,
-                    $row->type
+                    $row->total_box > 0 ? number_format($row->total_box) : '-',
+                    $row->total_dozen > 0 ? number_format($row->total_dozen, 2) : '-',
+                    $row->total_pcs > 0 ? number_format($row->total_pcs) : '-',
+                    number_format($row->total_qty),
+                    'Rp ' . number_format($row->total_value, 0, ',', '.')
                 ]);
             }
         }
@@ -123,6 +158,8 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
             'Periode: ' . $this->from . ' - ' . $this->to,
             '',
             '',
+            '',
+            '',
             ''
         ];
     }
@@ -135,8 +172,8 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
     public function styles(Worksheet $sheet)
     {
         // Style for title
-        $sheet->mergeCells('A1:E1');
-        $sheet->getStyle('A1:E1')->applyFromArray([
+        $sheet->mergeCells('A1:G1');
+        $sheet->getStyle('A1:G1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 16,
@@ -152,8 +189,8 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         ]);
 
         // Style for period
-        $sheet->mergeCells('A2:E2');
-        $sheet->getStyle('A2:E2')->applyFromArray([
+        $sheet->mergeCells('A2:G2');
+        $sheet->getStyle('A2:G2')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 12,
@@ -173,8 +210,8 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         for ($row = 3; $row <= $highestRow; $row++) {
             $cellValue = $sheet->getCell('A' . $row)->getValue();
             if (strpos($cellValue, 'REKAPAN') === 0) {
-                $sheet->mergeCells('A'.$row.':E'.$row);
-                $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray([
+                $sheet->mergeCells('A'.$row.':G'.$row);
+                $sheet->getStyle('A'.$row.':G'.$row)->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'size' => 14,
@@ -190,7 +227,7 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
                 ]);
                 $row++; // Skip the header row
                 // Style column headers
-                $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray([
+                $sheet->getStyle('A'.$row.':G'.$row)->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => 'FFFFFF'],
@@ -207,7 +244,7 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         }
 
         // Add borders to all cells
-        $sheet->getStyle('A1:E'.$highestRow)->applyFromArray([
+        $sheet->getStyle('A1:G'.$highestRow)->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -224,9 +261,11 @@ class RecapSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         return [
             'A' => 30, // Item
             'B' => 20, // Category
-            'C' => 15, // Total Qty
-            'D' => 20, // Total Value
-            'E' => 10, // Type
+            'C' => 12, // Box
+            'D' => 12, // Lusin
+            'E' => 12, // Pcs
+            'F' => 15, // Total (Pcs)
+            'G' => 20, // Total Value
         ];
     }
 }
@@ -239,12 +278,14 @@ class OmsetSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         $dailyOmset = collect();
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i);
+            $amount = (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
+                ->whereDate('transaction_date', $date)
+                ->sum('total_amount');
             $dailyOmset->push([
                 $date->format('Y-m-d'),
                 $date->format('l'),
-                (float) Transaction::where('type', 'out')
-                    ->whereDate('transaction_date', $date)
-                    ->sum('total_amount'),
+                'Rp ' . number_format($amount, 0, ',', '.'),
             ]);
         }
 
@@ -253,11 +294,13 @@ class OmsetSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         for ($i = 11; $i >= 0; $i--) {
             $weekStart = now()->subWeeks($i)->startOfWeek();
             $weekEnd = now()->subWeeks($i)->endOfWeek();
+            $amount = (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
+                ->whereBetween('transaction_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+                ->sum('total_amount');
             $weeklyOmset->push([
                 $weekStart->format('Y-m-d') . ' - ' . $weekEnd->format('Y-m-d'),
-                (float) Transaction::where('type', 'out')
-                    ->whereBetween('transaction_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
-                    ->sum('total_amount'),
+                'Rp ' . number_format($amount, 0, ',', '.'),
             ]);
         }
 
@@ -265,12 +308,14 @@ class OmsetSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         $monthlyOmset = collect();
         for ($i = 11; $i >= 0; $i--) {
             $month = now()->subMonths($i);
+            $amount = (float) Transaction::where('type', 'out')
+                ->where('payment_status', 'paid')
+                ->whereYear('transaction_date', $month->year)
+                ->whereMonth('transaction_date', $month->month)
+                ->sum('total_amount');
             $monthlyOmset->push([
                 $month->format('F Y'),
-                (float) Transaction::where('type', 'out')
-                    ->whereYear('transaction_date', $month->year)
-                    ->whereMonth('transaction_date', $month->month)
-                    ->sum('total_amount'),
+                'Rp ' . number_format($amount, 0, ',', '.'),
             ]);
         }
 
