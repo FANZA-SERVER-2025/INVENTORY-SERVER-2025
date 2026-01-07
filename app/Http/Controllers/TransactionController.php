@@ -119,14 +119,14 @@ class TransactionController extends Controller
                 'user_id' => auth()->id(),
                 'type' => $validated['type'],
                 'transaction_date' => $validated['transaction_date'],
-                'vehicle_id' => $validated['vehicle_id'],
+                'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'customer_name' => $validated['customer_name'] ?? null,
                 'customer_address' => $validated['customer_address'] ?? null,
                 'store_name' => $validated['store_name'] ?? null,
                 'payment_status' => $validated['payment_status'] ?? 'unpaid',
                 'discount' => $validated['discount'] ?? 0,
                 'bonus' => $validated['bonus'] ?? 0,
-                'notes' => $validated['notes'],
+                'notes' => $validated['notes'] ?? null,
                 'total_amount' => 0
             ]);
 
