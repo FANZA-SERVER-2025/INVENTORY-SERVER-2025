@@ -243,19 +243,8 @@
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td class="text-center">{{ $detail->item->code }}</td>
                     <td>{{ $detail->item->name }}</td>
-                    <td style="font-size: 8px;">
-                        @if($detail->unit_type === 'box')
-                            @if($detail->box_quantity > 0)
-                                <strong>{{ $detail->box_quantity }} Box</strong>
-                            @else
-                                <strong>{{ number_format($detail->quantity, 0, ',', '.') }} pcs</strong>
-                            @endif
-                        @elseif($detail->unit_type === 'dozen')
-                            <strong>{{ number_format($detail->quantity / 12, 0, ',', '.') }} Lsn</strong><br>
-                            <em>= {{ number_format($detail->quantity, 0, ',', '.') }} pcs</em>
-                        @else
-                            {{ number_format($detail->quantity, 0, ',', '.') }} pcs
-                        @endif
+                    <td class="text-center">
+                        {{ number_format($detail->quantity, 0, ',', '.') }} {{ strtoupper($detail->unit_type) }}
                     </td>
                     <td class="text-right">{{ number_format($detail->price, 0, ',', '.') }}</td>
                     <td class="text-center">-</td>

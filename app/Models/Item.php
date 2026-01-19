@@ -17,8 +17,7 @@ class Item extends Model
         'code',
         'description',
         'unit',
-        'box_type',
-        'box_quantity',
+        'unit_type',
         'stock',
         'minimum_stock',
         'purchase_price',
@@ -30,7 +29,6 @@ class Item extends Model
     protected $casts = [
         'stock' => 'integer',
         'minimum_stock' => 'integer',
-        'box_quantity' => 'integer',
         'purchase_price' => 'decimal:2',
         'selling_price' => 'decimal:2',
         'is_active' => 'boolean',

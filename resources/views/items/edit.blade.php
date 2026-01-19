@@ -86,35 +86,25 @@
 
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label class="form-label">Pengaturan Box</label>
+                                <label class="form-label">Satuan Item <span class="text-danger">*</span></label>
                                 <div class="card border">
                                     <div class="card-body">
                                         <p class="small text-info mb-3">
-                                            <i class="fas fa-info-circle"></i> <strong>Gunakan fitur ini apabila item dibeli dan dijual per box.</strong> Jika item dijual satuan (pcs/lusin), kosongkan saja.
+                                            <i class="fas fa-info-circle"></i> <strong>Pilih satuan untuk transaksi barang masuk dan keluar.</strong>
                                         </p>
                                         <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="box_type" class="form-label">Tipe Isi Box</label>
-                                                <select class="form-select @error('box_type') is-invalid @enderror" 
-                                                        id="box_type" name="box_type">
-                                                    <option value="">Tidak ada box</option>
-                                                    <option value="dozen" {{ old('box_type', $item->box_type) == 'dozen' ? 'selected' : '' }}>Lusin</option>
-                                                    <option value="pcs" {{ old('box_type', $item->box_type) == 'pcs' ? 'selected' : '' }}>Pcs</option>
+                                            <div class="col-md-12 mb-3">
+                                                <label for="unit_type" class="form-label">Pilih Satuan <span class="text-danger">*</span></label>
+                                                <select class="form-select @error('unit_type') is-invalid @enderror" 
+                                                        id="unit_type" name="unit_type" required>
+                                                    <option value="pcs" {{ old('unit_type', $item->unit_type ?? 'pcs') == 'pcs' ? 'selected' : '' }}>PCS (Pcs)</option>
+                                                    <option value="lusin" {{ old('unit_type', $item->unit_type) == 'lusin' ? 'selected' : '' }}>LUSIN (Lusin)</option>
+                                                    <option value="dus" {{ old('unit_type', $item->unit_type) == 'dus' ? 'selected' : '' }}>DUS (Dus/Box)</option>
                                                 </select>
-                                                @error('box_type')
+                                                @error('unit_type')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
-                                                <small class="text-muted">Pilih isi 1 box dalam satuan apa</small>
-                                            </div>
-
-                                            <div class="col-md-6 mb-3">
-                                                <label for="box_quantity" class="form-label">Jumlah per Box</label>
-                                                <input type="number" class="form-control @error('box_quantity') is-invalid @enderror" 
-                                                       id="box_quantity" name="box_quantity" value="{{ old('box_quantity', $item->box_quantity) }}" min="1">
-                                                @error('box_quantity')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                                <small class="text-muted">Contoh: 1 box = 12 pcs atau 1 box = 5 lusin</small>
+                                                <small class="text-muted">Satuan ini akan digunakan di barang masuk dan barang keluar</small>
                                             </div>
                                         </div>
                                     </div>

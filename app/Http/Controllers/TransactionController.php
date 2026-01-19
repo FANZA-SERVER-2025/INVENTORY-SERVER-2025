@@ -100,8 +100,7 @@ class TransactionController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:items,id',
-            'items.*.unit_type' => 'required|in:pcs,dozen,box',
-            'items.*.box_quantity' => 'nullable|integer|min:1',
+            'items.*.unit_type' => 'required|in:pcs,lusin,dus',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0'
         ]);
@@ -139,46 +138,28 @@ class TransactionController extends Controller
                 $quantity = $itemData['quantity'];
                 $price = $itemData['price'];
                 
-                // Calculate actual quantity in pcs based on unit type
-                $actualQuantityInPcs = $quantity;
-                
-                if ($unitType === 'dozen') {
-                    // For dozen: use default 12 pcs per dozen
-                    $actualQuantityInPcs = $quantity * 12;
-                } elseif ($unitType === 'box') {
-                    // For box: quantity already calculated in frontend based on user input
-                    $actualQuantityInPcs = $quantity;
-                }
-                
-                $subtotal = $actualQuantityInPcs * $price;
+                // Quantity sudah sesuai satuan yang dipilih, tidak perlu konversi
+                $actualQuantity = $quantity;
+                $subtotal = $actualQuantity * $price;
 
-                // Create detail with unit information
-                $detailData = [
+                // Create detail
+                TransactionDetail::create([
                     'transaction_id' => $transaction->id,
                     'item_id' => $item->id,
-                    'quantity' => $actualQuantityInPcs,
+                    'quantity' => $actualQuantity,
                     'unit_type' => $unitType,
                     'price' => $price,
                     'subtotal' => $subtotal
-                ];
-                
-                // Add box-specific data if unit type is box
-                if ($unitType === 'box' && isset($itemData['box_quantity']) && $itemData['box_quantity'] > 0) {
-                    $detailData['box_quantity'] = $itemData['box_quantity'];
-                    $detailData['sub_unit_type'] = $itemData['sub_unit_type'] ?? null;
-                    $detailData['sub_unit_quantity'] = $itemData['sub_unit_quantity'] ?? 0;
-                }
-                
-                TransactionDetail::create($detailData);
+                ]);
 
                 // Update stock based on transaction type
                 if ($validated['type'] === 'in') {
-                    $item->increment('stock', $actualQuantityInPcs);
+                    $item->increment('stock', $actualQuantity);
                 } else {
-                    if ($item->stock < $actualQuantityInPcs) {
-                        throw new \Exception("Stok {$item->name} tidak mencukupi. Tersedia: {$item->stock} pcs, diminta: {$actualQuantityInPcs} pcs");
+                    if ($item->stock < $actualQuantity) {
+                        throw new \Exception("Stok {$item->name} tidak mencukupi. Tersedia: {$item->stock}, diminta: {$actualQuantity}");
                     }
-                    $item->decrement('stock', $actualQuantityInPcs);
+                    $item->decrement('stock', $actualQuantity);
                 }
 
                 $totalAmount += $subtotal;

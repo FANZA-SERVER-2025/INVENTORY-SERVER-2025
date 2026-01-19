@@ -83,8 +83,7 @@ class ItemController extends Controller
             'code' => 'required|string|max:50|unique:items,code',
             'stock' => 'required|integer|min:0',
             'minimum_stock' => 'required|integer|min:0',
-            'box_type' => 'nullable|in:dozen,pcs',
-            'box_quantity' => 'nullable|integer|min:1',
+            'unit_type' => 'required|in:pcs,lusin,dus',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -93,11 +92,6 @@ class ItemController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-
-        // Clear box_quantity if box_type is not set
-        if (empty($validated['box_type'])) {
-            $validated['box_quantity'] = null;
-        }
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('items', 'public');
@@ -133,8 +127,7 @@ class ItemController extends Controller
             'code' => 'required|string|max:50|unique:items,code,' . $item->id,
             'stock' => 'required|integer|min:0',
             'minimum_stock' => 'required|integer|min:0',
-            'box_type' => 'nullable|in:dozen,pcs',
-            'box_quantity' => 'nullable|integer|min:1',
+            'unit_type' => 'required|in:pcs,lusin,dus',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -143,11 +136,6 @@ class ItemController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-
-        // Clear box_quantity if box_type is not set
-        if (empty($validated['box_type'])) {
-            $validated['box_quantity'] = null;
-        }
 
         if ($request->hasFile('image')) {
             // Delete old image

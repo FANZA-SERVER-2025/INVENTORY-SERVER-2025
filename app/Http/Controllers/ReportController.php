@@ -24,8 +24,8 @@ class ReportController extends Controller
 
         // Recap Barang Masuk (IN)
         $inRecap = TransactionDetail::select('item_id',
-                DB::raw('SUM(COALESCE(box_quantity, 0)) as total_box'),
-                DB::raw('SUM(quantity) / 12 as total_dozen'),
+                DB::raw('SUM(CASE WHEN unit_type = "dus" THEN quantity ELSE 0 END) as total_dus'),
+                DB::raw('SUM(CASE WHEN unit_type = "lusin" THEN quantity ELSE 0 END) as total_lusin'),
                 DB::raw('SUM(CASE WHEN unit_type = "pcs" THEN quantity ELSE 0 END) as total_pcs'),
                 DB::raw('SUM(quantity) as total_qty'),
                 DB::raw('SUM(subtotal) as total_value')
@@ -42,8 +42,8 @@ class ReportController extends Controller
                 return (object) [
                     'item_id' => $detail->item_id,
                     'item' => $detail->item,
-                    'total_box' => (int) $detail->total_box,
-                    'total_dozen' => round($detail->total_dozen, 2),
+                    'total_dus' => (int) $detail->total_dus,
+                    'total_lusin' => (int) $detail->total_lusin,
                     'total_pcs' => (int) $detail->total_pcs,
                     'total_qty' => (int) $detail->total_qty,
                     'total_value' => (float) $detail->total_value,
@@ -52,8 +52,8 @@ class ReportController extends Controller
 
         // Recap Barang Keluar (OUT)
         $outRecap = TransactionDetail::select('item_id',
-                DB::raw('SUM(COALESCE(box_quantity, 0)) as total_box'),
-                DB::raw('SUM(quantity) / 12 as total_dozen'),
+                DB::raw('SUM(CASE WHEN unit_type = "dus" THEN quantity ELSE 0 END) as total_dus'),
+                DB::raw('SUM(CASE WHEN unit_type = "lusin" THEN quantity ELSE 0 END) as total_lusin'),
                 DB::raw('SUM(CASE WHEN unit_type = "pcs" THEN quantity ELSE 0 END) as total_pcs'),
                 DB::raw('SUM(quantity) as total_qty'),
                 DB::raw('SUM(subtotal) as total_value')
@@ -71,8 +71,8 @@ class ReportController extends Controller
                 return (object) [
                     'item_id' => $detail->item_id,
                     'item' => $detail->item,
-                    'total_box' => (int) $detail->total_box,
-                    'total_dozen' => round($detail->total_dozen, 2),
+                    'total_dus' => (int) $detail->total_dus,
+                    'total_lusin' => (int) $detail->total_lusin,
                     'total_pcs' => (int) $detail->total_pcs,
                     'total_qty' => (int) $detail->total_qty,
                     'total_value' => (float) $detail->total_value,
@@ -89,12 +89,12 @@ class ReportController extends Controller
                 ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
                 ->count(),
             'in_qty' => (int) $inRecap->sum('total_qty'),
-            'in_box' => (int) $inRecap->sum('total_box'),
-            'in_dozen' => (int) $inRecap->sum('total_dozen'),
+            'in_dus' => (int) $inRecap->sum('total_dus'),
+            'in_lusin' => (int) $inRecap->sum('total_lusin'),
             'in_pcs' => (int) $inRecap->sum('total_pcs'),
             'out_qty' => (int) $outRecap->sum('total_qty'),
-            'out_box' => (int) $outRecap->sum('total_box'),
-            'out_dozen' => (int) $outRecap->sum('total_dozen'),
+            'out_dus' => (int) $outRecap->sum('total_dus'),
+            'out_lusin' => (int) $outRecap->sum('total_lusin'),
             'out_pcs' => (int) $outRecap->sum('total_pcs'),
             'in_amount' => (float) Transaction::where('type', 'in')
                 ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])

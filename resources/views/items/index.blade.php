@@ -32,7 +32,7 @@
                             <th>Kategori</th>
                             <th>Supplier</th>
                             <th>Stok</th>
-                            <th>Unit</th>
+                            <th>Satuan</th>
                             <th>Harga Beli</th>
                             <th>Harga Jual</th>
                             <th>Status</th>
@@ -75,11 +75,6 @@ $(document).ready(function() {
                 name: 'stock',
                 render: function(data) {
                     let stockDisplay = data.stock;
-                    if (data.box_type && data.box_quantity && data.box_quantity > 0) {
-                        const pcsPerBox = (data.box_type === 'dozen') ? data.box_quantity * 12 : data.box_quantity;
-                        const boxCount = Math.floor(data.stock / pcsPerBox);
-                        stockDisplay = boxCount + ' box';
-                    }
                     let badge = '';
                     if (data.stock < data.minimum_stock) {
                         badge = '<span class="badge bg-warning ms-1">Low</span>';
@@ -87,7 +82,14 @@ $(document).ready(function() {
                     return stockDisplay + badge;
                 }
             },
-            { data: 'unit', name: 'unit' },
+            { 
+                data: 'unit_type', 
+                name: 'unit_type',
+                render: function(data) {
+                    const unitType = data || 'pcs';
+                    return '<span class="badge bg-info">' + unitType.toUpperCase() + '</span>';
+                }
+            },
             {
                 data: 'purchase_price',
                 name: 'purchase_price',

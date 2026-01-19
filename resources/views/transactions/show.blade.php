@@ -120,26 +120,7 @@
                                         <small class="text-muted">{{ $detail->item->code }}</small>
                                     </td>
                                     <td class="text-center">
-                                        @if($detail->unit_type === 'box')
-                                            <div>
-                                                <span class="badge bg-primary">{{ $detail->box_quantity }} Box</span>
-                                                @if($detail->sub_unit_quantity > 0)
-                                                    + <span class="badge bg-info">{{ $detail->sub_unit_quantity }} {{ ucfirst($detail->sub_unit_type) }}</span>
-                                                @endif
-                                            </div>
-                                            <small class="text-muted d-block mt-1">
-                                                = {{ number_format($detail->quantity, 0, ',', '.') }} pcs
-                                            </small>
-                                        @elseif($detail->unit_type === 'dozen')
-                                            <div>
-                                                <span class="badge bg-success">{{ number_format($detail->quantity / 12, 0, ',', '.') }} Lusin</span>
-                                            </div>
-                                            <small class="text-muted d-block mt-1">
-                                                = {{ number_format($detail->quantity, 0, ',', '.') }} pcs
-                                            </small>
-                                        @else
-                                            {{ number_format($detail->quantity, 0, ',', '.') }} pcs
-                                        @endif
+                                        <span class="badge bg-primary">{{ number_format($detail->quantity, 0, ',', '.') }} {{ strtoupper($detail->unit_type) }}</span>
                                     </td>
                                     <td class="text-end">
                                         Rp {{ number_format($detail->price, 0, ',', '.') }}
