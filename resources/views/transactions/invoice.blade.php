@@ -10,21 +10,49 @@
             padding: 0;
             box-sizing: border-box;
         }
+        
+        /* Print settings untuk Epson LX310 - Continuous Form 9.5" x 11" */
+        @page {
+            size: 9.5in 11in;
+            margin: 0.25in 0.2in;
+        }
+        
+        @media print {
+            body {
+                width: 9.5in;
+                height: 11in;
+                margin: 0;
+                padding: 0;
+            }
+            .page {
+                page-break-after: always;
+                margin: 0;
+                padding: 0.2in 0.3in;
+            }
+            .page:last-child {
+                page-break-after: auto;
+            }
+        }
+        
         body {
-            font-family: 'Arial', sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
+            font-family: 'Courier New', 'Courier', monospace;
+            font-size: 10px;
+            line-height: 1.3;
             color: #000;
+            margin: 0;
+            padding: 0;
+            text-align: center;
         }
 
-        /* ============ PAGE STYLES ============ */
+        /* ============ PAGE STYLES - Continuous Form ============ */
         .page {
-            width: 190mm;
-            max-height: 150mm;
-            padding: 10mm;
-            margin: 0 auto 10mm auto;
+            width: 9in;
+            min-height: 10.4in;
+            padding: 0.2in 0.3in;
+            margin: 0 auto;
             page-break-after: always;
             position: relative;
+            text-align: left;
         }
         .page:last-child {
             page-break-after: auto;
@@ -34,28 +62,25 @@
         /* Page 1 - Putih */
         .page-white {
             background-color: #ffffff;
-            border-left: 8px solid #cccccc;
         }
 
         /* Page 2 - Pink */
         .page-pink {
-            background-color: #ffb6c1;
-            border-left: 8px solid #ff69b4;
+            background-color: #ffe4e1;
         }
 
         /* Page 3 - Kuning */
         .page-yellow {
-            background-color: #ffeb3b;
-            border-left: 8px solid #ffc107;
+            background-color: #fffacd;
         }
 
-        /* ============ COMMON STYLES ============ */
+        /* ============ COMMON STYLES - Optimized for Dot Matrix ============ */
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 6px;
         }
         .header-left {
             display: table-cell;
@@ -67,38 +92,38 @@
             width: 50%;
             vertical-align: top;
             text-align: left;
-            padding-left: 15px;
+            padding-left: 12px;
         }
         .company-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
         }
         .header-left div, .header-right div {
-            margin-bottom: 2px;
-            font-size: 10px;
+            margin-bottom: 1px;
+            font-size: 9px;
         }
         .label {
             display: inline-block;
-            width: 100px;
+            width: 90px;
             font-weight: normal;
         }
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
+            margin: 10px 0;
         }
         .items-table th {
-            background-color: rgba(0,0,0,0.1);
             border: 1px solid #000;
-            padding: 4px 3px;
+            padding: 3px 2px;
             text-align: center;
             font-size: 9px;
             font-weight: bold;
         }
         .items-table td {
             border: 1px solid #000;
-            padding: 3px;
+            padding: 2px;
             font-size: 9px;
         }
         .items-table .text-center {
@@ -109,17 +134,17 @@
         }
         .summary {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         .summary table {
-            width: 250px;
+            width: 200px;
             margin-left: auto;
             border-collapse: collapse;
         }
         .summary td {
-            padding: 4px;
-            border-bottom: 1px solid #999;
-            font-size: 10px;
+            padding: 3px;
+            border-bottom: 1px solid #000;
+            font-size: 9px;
         }
         .summary .label-col {
             text-align: right;
@@ -131,13 +156,13 @@
             width: 45%;
         }
         .summary .total-row {
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 10px;
         }
         .signature-section {
-            margin-top: 40px;
+            margin-top: 25px;
             display: table;
             width: 100%;
         }
@@ -145,28 +170,27 @@
             display: table-cell;
             width: 50%;
             text-align: center;
-            padding: 0 15px;
-            font-size: 10px;
+            padding: 0 10px;
+            font-size: 9px;
         }
         .signature-line {
-            margin-top: 50px;
+            margin-top: 35px;
             border-top: 1px solid #000;
-            padding-top: 5px;
+            padding-top: 4px;
             display: inline-block;
-            min-width: 120px;
+            min-width: 100px;
         }
         .print-date {
-            margin-top: 15px;
+            margin-top: 10px;
             font-size: 8px;
-            color: #666;
+            color: #333;
             text-align: right;
         }
         .notes-box {
-            margin-top: 15px;
-            padding: 8px;
-            background-color: rgba(0,0,0,0.05);
-            border-left: 3px solid #333;
-            font-size: 9px;
+            margin-top: 10px;
+            padding: 6px;
+            border: 1px solid #000;
+            font-size: 8px;
         }
     </style>
 </head>
