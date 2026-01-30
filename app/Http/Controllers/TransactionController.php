@@ -7,6 +7,7 @@ use App\Models\TransactionDetail;
 use App\Models\Item;
 use App\Models\Vehicle;
 use App\Exports\TransactionsExport;
+use App\Exports\InvoiceExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -280,7 +281,7 @@ class TransactionController extends Controller
     public function invoice(Transaction $transaction)
     {
         $transaction->load(['user', 'vehicle', 'details.item']);
-        $pdf = Pdf::loadView('transactions.invoice', compact('transaction'));
-        return $pdf->download('invoice_' . $transaction->transaction_number . '.pdf');
+        $filename = 'invoice_' . $transaction->transaction_number . '_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new InvoiceExport($transaction), $filename);
     }
 }

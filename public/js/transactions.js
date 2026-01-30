@@ -67,8 +67,8 @@ $(document).ready(function() {
                     if (typeof canViewTransactions !== 'undefined' && canViewTransactions) {
                         buttons += '<a href="/transactions/' + data.id + '" class="btn btn-sm btn-info me-1" title="Detail">' +
                                   '<i class="fas fa-eye"></i></a>';
-                        buttons += '<a href="/transactions/' + data.id + '/invoice" class="btn btn-sm btn-secondary me-1" title="Invoice" target="_blank">' +
-                                  '<i class="fas fa-file-pdf"></i></a>';
+                        buttons += '<a href="/transactions/' + data.id + '/invoice" class="btn btn-sm btn-secondary me-1" title="Export Invoice Excel">' +
+                                  '<i class="fas fa-file-excel"></i></a>';
                     }
                     
                     // Edit button for unpaid transactions

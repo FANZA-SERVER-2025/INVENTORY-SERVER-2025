@@ -184,7 +184,7 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="{{ route('transactions.invoice', $transaction) }}" class="btn btn-secondary" target="_blank">
-                            <i class="fas fa-file-pdf"></i> Download Invoice PDF
+                            <i class="fas fa-file-pdf"></i> Download Invoice
                         </a>
                         <a href="{{ route('transactions.index') }}" class="btn btn-outline-primary">
                             <i class="fas fa-list"></i> Lihat Semua Transaksi
