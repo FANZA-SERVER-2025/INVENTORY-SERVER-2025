@@ -103,7 +103,9 @@ class TransactionController extends Controller
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.unit_type' => 'required|in:pcs,lusin,dus',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0'
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.bonus' => 'nullable|numeric|min:0'
         ]);
 
         DB::beginTransaction();
@@ -138,10 +140,12 @@ class TransactionController extends Controller
                 $unitType = $itemData['unit_type'];
                 $quantity = $itemData['quantity'];
                 $price = $itemData['price'];
+                $discount = $itemData['discount'] ?? 0;
+                $bonus = $itemData['bonus'] ?? 0;
                 
                 // Quantity sudah sesuai satuan yang dipilih, tidak perlu konversi
                 $actualQuantity = $quantity;
-                $subtotal = $actualQuantity * $price;
+                $subtotal = ($actualQuantity * $price) - $discount - $bonus;
 
                 // Create detail
                 TransactionDetail::create([
@@ -150,7 +154,9 @@ class TransactionController extends Controller
                     'quantity' => $actualQuantity,
                     'unit_type' => $unitType,
                     'price' => $price,
-                    'subtotal' => $subtotal
+                    'subtotal' => $subtotal,
+                    'discount' => $discount,
+                    'bonus' => $bonus
                 ]);
 
                 // Update stock based on transaction type

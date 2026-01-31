@@ -19,6 +19,8 @@ class TransactionDetail extends Model
         'sub_unit_quantity',
         'price',
         'subtotal',
+        'discount',
+        'bonus',
     ];
 
     protected $casts = [
@@ -27,6 +29,8 @@ class TransactionDetail extends Model
         'sub_unit_quantity' => 'integer',
         'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'bonus' => 'decimal:2',
     ];
 
     /**

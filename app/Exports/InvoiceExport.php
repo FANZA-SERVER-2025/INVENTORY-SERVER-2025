@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle
 {
@@ -80,16 +81,23 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
         foreach ($this->transaction->details as $index => $detail) {
             $qtyWithUnit = number_format($detail->quantity, 0, ',', '.') . ' ' . strtoupper($detail->unit_type);
             
+            // Get discount and bonus per item
+            $discountValue = floatval($detail->discount ?? 0);
+            $bonusValue = floatval($detail->bonus ?? 0);
+            
+            $discount = $discountValue > 0 ? $discountValue : '-';
+            $bonus = $bonusValue > 0 ? $bonusValue : '-';
+            
             $data->push([
                 $index + 1,
                 $detail->item->code ?? '-',
                 $detail->item->name ?? '-',
                 $qtyWithUnit,
-                number_format($detail->price, 0, ',', '.'),
+                floatval($detail->price),
+                $discount,
+                $bonus,
                 '-',
-                '-',
-                '-',
-                number_format($detail->subtotal, 0, ',', '.'),
+                floatval($detail->subtotal),
             ]);
         }
         
@@ -108,17 +116,17 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
         $bonus = $this->transaction->bonus ?? 0;
         $grandTotal = $subtotal - $discount - $bonus;
         
-        $data->push(['', '', '', '', '', '', '', 'Sub Total:', 'Rp ' . number_format($subtotal, 0, ',', '.')]);
+        $data->push(['', '', '', '', '', '', '', 'Sub Total:', floatval($subtotal)]);
         
         if ($discount > 0) {
-            $data->push(['', '', '', '', '', '', '', 'Diskon:', 'Rp ' . number_format($discount, 0, ',', '.')]);
+            $data->push(['', '', '', '', '', '', '', 'Diskon:', floatval($discount)]);
         }
         
         if ($bonus > 0) {
-            $data->push(['', '', '', '', '', '', '', 'Bonus:', 'Rp ' . number_format($bonus, 0, ',', '.')]);
+            $data->push(['', '', '', '', '', '', '', 'Bonus:', floatval($bonus)]);
         }
         
-        $data->push(['', '', '', '', '', '', '', 'TOTAL AKHIR:', 'Rp ' . number_format($grandTotal, 0, ',', '.')]);
+        $data->push(['', '', '', '', '', '', '', 'TOTAL AKHIR:', floatval($grandTotal)]);
         
         if ($this->transaction->notes) {
             $data->push(['', '', '', '', '', '', '', '', '']); // Empty row
@@ -235,10 +243,19 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
             $sheet->getStyle('E' . $dataStartRow . ':E' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->getStyle('I' . $dataStartRow . ':I' . $dataEndRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             
+            // Apply currency format to Harga (E), D1 (F), D2 (G), and Total (I) columns
+            $sheet->getStyle('E' . $dataStartRow . ':E' . $dataEndRow)->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            $sheet->getStyle('F' . $dataStartRow . ':F' . $dataEndRow)->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            $sheet->getStyle('G' . $dataStartRow . ':G' . $dataEndRow)->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            $sheet->getStyle('I' . $dataStartRow . ':I' . $dataEndRow)->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            
             // Style summary section
             $summaryStartRow = $dataEndRow + 2;
             $sheet->getStyle('H' . $summaryStartRow . ':I' . ($summaryStartRow + 10))->getFont()->setBold(true);
             $sheet->getStyle('H' . $summaryStartRow . ':I' . ($summaryStartRow + 10))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            
+            // Apply currency format to summary section
+            $sheet->getStyle('I' . $summaryStartRow . ':I' . ($summaryStartRow + 10))->getNumberFormat()->setFormatCode('"Rp "#,##0');
             
             // Add border to summary
             $sheet->getStyle('H' . $summaryStartRow . ':I' . ($summaryStartRow + 10))->applyFromArray([

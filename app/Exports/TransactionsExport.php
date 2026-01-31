@@ -58,32 +58,40 @@ class TransactionsExport implements FromCollection, WithHeadings, WithStyles, Wi
             
             // Add detail headers
             $data->push([
-                'Item',
-                'Unit Type',
-                'Box',
-                'Lusin',
-                'Pcs',
+                'No',
+                'Kode',
+                'Nama Item',
+                'Qty',
                 'Harga',
-                'Diskon',
-                'Bonus',
-                'Subtotal',
+                'D1',
+                'D2',
+                'D3',
+                'Total',
             ]);
             
             // Add details
+            $no = 1;
             foreach ($transaction->details as $detail) {
-                $lusin = $detail->quantity / 12;
-                $pcs = $detail->unit_type === 'pcs' ? $detail->quantity : 0;
+                $qty = $detail->quantity . ' ' . strtoupper($detail->unit_type);
+                
+                // Format discount and bonus - show value or '-'
+                // Convert to float for comparison since decimal fields return as strings
+                $discountValue = floatval($detail->discount ?? 0);
+                $bonusValue = floatval($detail->bonus ?? 0);
+                
+                $discount = $discountValue > 0 ? $discountValue : '-';
+                $bonus = $bonusValue > 0 ? $bonusValue : '-';
                 
                 $data->push([
+                    $no++,
+                    $detail->item->code ?? '-',
                     $detail->item->name ?? '-',
-                    ucfirst($detail->unit_type),
-                    $detail->box_quantity > 0 ? number_format($detail->box_quantity) : '-',
-                    $lusin > 0 ? number_format($lusin, 2) : '-',
-                    $pcs > 0 ? number_format($pcs) : '-',
-                    'Rp ' . number_format($detail->price, 0, ',', '.'),
-                    $detail->discount > 0 ? 'Rp ' . number_format($detail->discount, 0, ',', '.') : '-',
-                    $detail->bonus > 0 ? 'Rp ' . number_format($detail->bonus, 0, ',', '.') : '-',
-                    'Rp ' . number_format($detail->subtotal, 0, ',', '.'),
+                    $qty,
+                    floatval($detail->price),
+                    $discount,
+                    $bonus,
+                    '-',
+                    floatval($detail->subtotal),
                 ]);
             }
             
@@ -96,8 +104,20 @@ class TransactionsExport implements FromCollection, WithHeadings, WithStyles, Wi
                 '',
                 '',
                 '',
-                'TOTAL:',
-                'Rp ' . number_format($transaction->total_amount, 0, ',', '.'),
+                'Sub Total:',
+                floatval($transaction->total_amount),
+            ]);
+            
+            $data->push([
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'TOTAL AKHIR:',
+                floatval($transaction->total_amount),
             ]);
             
             // Add notes if any
@@ -181,7 +201,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithStyles, Wi
             }
             
             // Detail column headers
-            if ($cellValue === 'Item') {
+            if ($cellValue === 'No') {
                 $sheet->getStyle('A'.$row.':I'.$row)->applyFromArray([
                     'font' => [
                         'bold' => true,
@@ -198,7 +218,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithStyles, Wi
             }
             
             // Total row
-            if ($sheet->getCell('H' . $row)->getValue() === 'TOTAL:') {
+            if ($sheet->getCell('H' . $row)->getValue() === 'Sub Total:' || $sheet->getCell('H' . $row)->getValue() === 'TOTAL AKHIR:') {
                 $sheet->getStyle('A'.$row.':I'.$row)->applyFromArray([
                     'font' => [
                         'bold' => true,
@@ -241,15 +261,15 @@ class TransactionsExport implements FromCollection, WithHeadings, WithStyles, Wi
     public function columnWidths(): array
     {
         return [
-            'A' => 30, // Item
-            'B' => 12, // Unit Type
-            'C' => 10, // Box
-            'D' => 10, // Lusin
-            'E' => 10, // Pcs
-            'F' => 15, // Harga
-            'G' => 12, // Diskon
-            'H' => 12, // Bonus
-            'I' => 18, // Subtotal
+            'A' => 8,  // No
+            'B' => 12, // Kode
+            'C' => 30, // Nama Item
+            'D' => 12, // Qty
+            'E' => 15, // Harga
+            'F' => 12, // D1 (Diskon)
+            'G' => 12, // D2 (Bonus)
+            'H' => 5,  // D3 (-)
+            'I' => 18, // Total
         ];
     }
 }

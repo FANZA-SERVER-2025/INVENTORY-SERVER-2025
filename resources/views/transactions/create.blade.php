@@ -109,16 +109,18 @@
                             <table class="table table-bordered" id="itemsTable">
                                 <thead>
                                     <tr>
-                                        <th width="35%">Item</th>
-                                        <th width="12%">Stok</th>
-                                        <th width="12%">Satuan</th>
-                                        <th width="15%">Quantity</th>
-                                        <th width="18%">Harga</th>
+                                        <th width="30%">Item</th>
+                                        <th width="10%">Stok</th>
+                                        <th width="10%">Satuan</th>
+                                        <th width="12%">Quantity</th>
+                                        <th width="15%">Harga</th>
+                                        <th id="discountHeader" width="10%" style="display: none;">Diskon</th>
+                                        <th id="bonusHeader" width="10%" style="display: none;">Bonus</th>
                                         <th width="8%">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="itemsTableBody">
-                                    <tr>
+                                    <tr id="emptyRow">
                                         <td colspan="6" class="text-center text-muted">Belum ada item. Klik "Tambah Item" untuk menambahkan.</td>
                                     </tr>
                                 </tbody>
@@ -223,6 +225,45 @@ function parseCurrency(value) {
     return parseInt(value.toString().replace(/\./g, '')) || 0;
 }
 
+function toggleDiscountColumn(type) {
+    if (type === 'out') {
+        $('#discountHeader').show();
+        $('#bonusHeader').show();
+        $('#emptyRow td').attr('colspan', 8);
+        
+        // Add discount and bonus columns to existing rows if not present
+        $('#itemsTableBody tr').each(function() {
+            const row = $(this);
+            if (!row.hasClass('empty-row') && row.find('.item-discount').length === 0) {
+                const index = row.data('index');
+                const discountTd = `
+                    <td>
+                        <input type="text" class="form-control form-control-sm item-discount-display" value="0">
+                        <input type="hidden" class="item-discount" name="items[${index}][discount]" value="0">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm item-bonus-display" value="0">
+                        <input type="hidden" class="item-bonus" name="items[${index}][bonus]" value="0">
+                    </td>
+                `;
+                row.find('td').eq(4).after(discountTd);
+            }
+        });
+    } else {
+        $('#discountHeader').hide();
+        $('#bonusHeader').hide();
+        $('#emptyRow td').attr('colspan', 6);
+        
+        // Remove discount and bonus columns from existing rows
+        $('#itemsTableBody tr').each(function() {
+            const row = $(this);
+            if (!row.hasClass('empty-row')) {
+                row.find('.item-discount-display, .item-discount, .item-bonus-display, .item-bonus').closest('td').remove();
+            }
+        });
+    }
+}
+
 $(document).ready(function() {
     // Form validation before submit
     $('#transactionForm').on('submit', function(e) {
@@ -260,6 +301,8 @@ $(document).ready(function() {
             $('#bonus').val(0);
         }
         
+        toggleDiscountColumn(type);
+        
         // Update all existing item prices when transaction type changes
         $('#itemsTableBody tr').each(function() {
             const row = $(this);
@@ -288,6 +331,7 @@ $(document).ready(function() {
         $('#payment-status-field').show();
         $('#discount-bonus-section').show();
     }
+    toggleDiscountColumn($('#type').val());
 
     $('#addItemBtn').on('click', function() {
         const transactionType = $('#type').val();
@@ -339,6 +383,11 @@ $(document).ready(function() {
                 
                 row.data('item', item);
                 row.data('unit-type', unitType);
+                
+                // Update placeholders for discount and bonus
+                const itemName = item ? item.name : '';
+                row.find('.item-discount-display').attr('placeholder', `Diskon (${itemName})`);
+                row.find('.item-bonus-display').attr('placeholder', `Bonus (${itemName})`);
             }
         } else {
             row.find('.item-stock').text('-');
@@ -349,7 +398,7 @@ $(document).ready(function() {
         updateSummary();
     });
 
-    $(document).on('input', '.item-quantity, .item-price', function() {
+    $(document).on('input', '.item-quantity, .item-price, .item-discount', function() {
         updateSummary();
     });
 });
@@ -358,6 +407,9 @@ function addItemRow() {
     if ($('#itemsTableBody tr td').attr('colspan')) {
         $('#itemsTableBody').empty();
     }
+
+    const transactionType = $('#type').val();
+    const hasDiscount = transactionType === 'out';
 
     const row = `
         <tr data-index="${itemIndex}">
@@ -383,6 +435,16 @@ function addItemRow() {
                 <input type="text" class="form-control form-control-sm item-price-display" value="0" readonly>
                 <input type="hidden" class="item-price" name="items[${itemIndex}][price]" value="0">
             </td>
+            ${hasDiscount ? `
+            <td>
+                <input type="text" class="form-control form-control-sm item-discount-display" value="0" placeholder="Diskon">
+                <input type="hidden" class="item-discount" name="items[${itemIndex}][discount]" value="0">
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm item-bonus-display" value="0" placeholder="Bonus">
+                <input type="hidden" class="item-bonus" name="items[${itemIndex}][bonus]" value="0">
+            </td>
+            ` : ''}
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-danger remove-item-btn">
                     <i class="fas fa-trash"></i>
@@ -409,11 +471,13 @@ function updateSummary() {
         
         const qty = parseInt(row.find('.item-quantity').val()) || 0;
         const price = parseFloat(row.find('.item-price').val()) || 0;
+        const discount = parseFloat(row.find('.item-discount').val()) || 0;
+        const bonus = parseFloat(row.find('.item-bonus').val()) || 0;
         
         if (qty > 0 && price > 0) {
             totalItems++;
             totalQuantity += qty;
-            totalAmount += (qty * price);
+            totalAmount += (qty * price) - discount - bonus;
         }
     });
 
@@ -422,8 +486,9 @@ function updateSummary() {
     $('#subtotalAmount').text('Rp ' + formatCurrency(totalAmount));
     
     // Calculate final total with discount and bonus
-    const discount = parseFloat($('#discount').val()) || 0;
-    const bonus = parseFloat($('#bonus').val()) || 0;
+    let discount = parseFloat($('#discount').val()) || 0;
+    let bonus = parseFloat($('#bonus').val()) || 0;
+    
     const finalTotal = totalAmount - discount - bonus;
     
     $('#totalAmount').text('Rp ' + formatCurrency(Math.max(0, finalTotal)));
@@ -442,6 +507,22 @@ $('#bonus_display').on('input', function() {
     let value = parseCurrency($(this).val());
     $(this).val(formatCurrency(value));
     $('#bonus').val(value);
+    updateSummary();
+});
+
+// Format item discount inputs
+$(document).on('input', '.item-discount-display', function() {
+    let value = parseCurrency($(this).val());
+    $(this).val(formatCurrency(value));
+    $(this).siblings('.item-discount').val(value);
+    updateSummary();
+});
+
+// Format item bonus inputs
+$(document).on('input', '.item-bonus-display', function() {
+    let value = parseCurrency($(this).val());
+    $(this).val(formatCurrency(value));
+    $(this).siblings('.item-bonus').val(value);
     updateSummary();
 });
 </script>
