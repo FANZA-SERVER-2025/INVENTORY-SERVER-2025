@@ -136,11 +136,11 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
         // Signature section - layout 2 kolom yang rapi
         $data->push(['', '', '', '', '', '', '', '', '']); // Empty row
         $data->push(['', '', '', '', '', '', '', '', '']); // Empty row
-        $data->push(['Hormat Kami,', '', '', '', '', '', '', 'Penerima,', '']);
+        $data->push(['Penerima,', '', '', '', '', '', '', 'Mengetahui,', '']);
         $data->push(['', '', '', '', '', '', '', '', '']);
         $data->push(['', '', '', '', '', '', '', '', '']);
         $data->push(['', '', '', '', '', '', '', '', '']);
-        $data->push([$this->transaction->user->name, '', '', '', '', '', '', '(                                           )', '']);
+        $data->push(['(                                           )', '', '', '', '', '', '', $this->transaction->user->name, '']);
         
         $data->push(['', '', '', '', '', '', '', '', '']); // Empty row
         $data->push(['', '', '', '', '', '', '', '', 'Dicetak pada: ' . now()->format('d/m/Y H:i:s')]);
@@ -301,17 +301,17 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
         // Signature section styling
         foreach ($sheet->getRowIterator() as $row) {
             $cellValue = $sheet->getCell('A' . $row->getRowIndex())->getValue();
-            if ($cellValue === 'Hormat Kami,') {
+            if ($cellValue === 'Penerima,') {
                 $signatureRow = $row->getRowIndex();
                 
-                // Style "Hormat Kami," dan "Penerima," - center alignment
+                // Style "Penerima," dan "Mengetahui," - center alignment
                 $sheet->getStyle('A' . $signatureRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('H' . $signatureRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 
-                // Merge cells untuk "Hormat Kami," section (A-F)
+                // Merge cells untuk "Penerima," section (A-F)
                 $sheet->mergeCells('A' . $signatureRow . ':F' . $signatureRow);
                 
-                // Merge cells untuk "Penerima," section (H-I)
+                // Merge cells untuk "Mengetahui," section (H-I)
                 $sheet->mergeCells('H' . $signatureRow . ':I' . $signatureRow);
                 
                 // Style nama dan kurung (4 baris ke bawah dari signature header)
@@ -319,10 +319,10 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 $sheet->getStyle('A' . $nameRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('H' . $nameRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 
-                // Merge cells untuk nama
+                // Merge cells untuk kurung penerima
                 $sheet->mergeCells('A' . $nameRow . ':F' . $nameRow);
                 
-                // Merge cells untuk kurung penerima
+                // Merge cells untuk nama mengetahui
                 $sheet->mergeCells('H' . $nameRow . ':I' . $nameRow);
                 
                 break;

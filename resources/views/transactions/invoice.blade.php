@@ -328,15 +328,15 @@
         <!-- Signature Section -->
         <div class="signature-section">
             <div class="signature-box">
-                <div>Hormat Kami,</div>
-                <div class="signature-line">
-                    {{ $transaction->user->name }}
-                </div>
-            </div>
-            <div class="signature-box">
                 <div>Penerima,</div>
                 <div class="signature-line">
                     (&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
+                </div>
+            </div>
+            <div class="signature-box">
+                <div>Mengetahui,</div>
+                <div class="signature-line">
+                    {{ $transaction->user->name }}
                 </div>
             </div>
         </div>
