@@ -140,7 +140,7 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
         $data->push(['', '', '', '', '', '', '', '', '']);
         $data->push(['', '', '', '', '', '', '', '', '']);
         $data->push(['', '', '', '', '', '', '', '', '']);
-        $data->push(['(                                           )', '', '', '', '', '', '', $this->transaction->user->name, '']);
+        $data->push(['(                                           )', '', '', '', '', '', '', '(                                           )', '']);
         
         $data->push(['', '', '', '', '', '', '', '', '']); // Empty row
         $data->push(['', '', '', '', '', '', '', '', 'Dicetak pada: ' . now()->format('d/m/Y H:i:s')]);
@@ -322,7 +322,7 @@ class InvoiceExport implements FromCollection, WithHeadings, WithStyles, WithCol
                 // Merge cells untuk kurung penerima
                 $sheet->mergeCells('A' . $nameRow . ':F' . $nameRow);
                 
-                // Merge cells untuk nama mengetahui
+                // Merge cells untuk kurung mengetahui
                 $sheet->mergeCells('H' . $nameRow . ':I' . $nameRow);
                 
                 break;

@@ -336,7 +336,7 @@
             <div class="signature-box">
                 <div>Mengetahui,</div>
                 <div class="signature-line">
-                    {{ $transaction->user->name }}
+                    (&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
                 </div>
             </div>
         </div>
