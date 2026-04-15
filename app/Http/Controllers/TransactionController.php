@@ -9,7 +9,9 @@ use App\Models\Vehicle;
 use App\Exports\TransactionsExport;
 use App\Exports\InvoiceExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -110,31 +112,10 @@ class TransactionController extends Controller
 
         DB::beginTransaction();
         try {
-            // Generate transaction number (safe against duplicate on same day)
-            $datePart = now()->format('Ymd');
-            $prefix = 'TRX-' . $datePart . '-';
-
-            $lastTransaction = Transaction::where('transaction_number', 'like', $prefix . '%')
-                ->orderBy('transaction_number', 'desc')
-                ->lockForUpdate()
-                ->first();
-
-            $lastNumber = 0;
-            if ($lastTransaction && preg_match('/^(\\d{4})$/', substr($lastTransaction->transaction_number, -4))) {
-                $lastNumber = (int) substr($lastTransaction->transaction_number, -4);
-            }
-
-            $number = $lastNumber + 1;
-            $transactionNumber = $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
-
-            while (Transaction::where('transaction_number', $transactionNumber)->exists()) {
-                $number++;
-                $transactionNumber = $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
-            }
-
             // Create transaction
             $transaction = Transaction::create([
-                'transaction_number' => $transactionNumber,
+                // Temporary unique number, will be replaced after we get auto-increment ID
+                'transaction_number' => 'TMP-' . Str::uuid(),
                 'user_id' => auth()->id(),
                 'type' => $validated['type'],
                 'transaction_date' => $validated['transaction_date'],
@@ -148,6 +129,11 @@ class TransactionController extends Controller
                 'notes' => $validated['notes'] ?? null,
                 'total_amount' => 0
             ]);
+
+            // Generate final transaction number based on transaction date + DB auto-increment ID
+            $datePart = Carbon::parse($validated['transaction_date'])->format('Ymd');
+            $transactionNumber = 'TRX-' . $datePart . '-' . str_pad((string) $transaction->id, 4, '0', STR_PAD_LEFT);
+            $transaction->update(['transaction_number' => $transactionNumber]);
 
             $totalAmount = 0;
 
