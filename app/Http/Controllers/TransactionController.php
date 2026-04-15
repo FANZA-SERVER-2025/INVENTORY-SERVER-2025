@@ -110,10 +110,27 @@ class TransactionController extends Controller
 
         DB::beginTransaction();
         try {
-            // Generate transaction number
-            $lastTransaction = Transaction::whereDate('created_at', today())->latest()->first();
-            $number = $lastTransaction ? intval(substr($lastTransaction->transaction_number, -4)) + 1 : 1;
-            $transactionNumber = 'TRX-' . date('Ymd') . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+            // Generate transaction number (safe against duplicate on same day)
+            $datePart = now()->format('Ymd');
+            $prefix = 'TRX-' . $datePart . '-';
+
+            $lastTransaction = Transaction::where('transaction_number', 'like', $prefix . '%')
+                ->orderBy('transaction_number', 'desc')
+                ->lockForUpdate()
+                ->first();
+
+            $lastNumber = 0;
+            if ($lastTransaction && preg_match('/^(\\d{4})$/', substr($lastTransaction->transaction_number, -4))) {
+                $lastNumber = (int) substr($lastTransaction->transaction_number, -4);
+            }
+
+            $number = $lastNumber + 1;
+            $transactionNumber = $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+            while (Transaction::where('transaction_number', $transactionNumber)->exists()) {
+                $number++;
+                $transactionNumber = $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
+            }
 
             // Create transaction
             $transaction = Transaction::create([
